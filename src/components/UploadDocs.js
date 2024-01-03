@@ -1,47 +1,27 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Button, CircularProgress, Grid, IconButton, List, ListItem, ListItemText } from '@material-ui/core';
+import { Button, Grid, IconButton, List, ListItem, ListItemText } from '@material-ui/core';
 import Snackbar from '@mui/material/Snackbar';
 import Box from '@mui/material/Box';
-import LinearProgress from '@mui/material/LinearProgress';
-
 
 const UploadDocs = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState([]);
   const [open, setOpen] = useState(false);
 
-  const [progress, setProgress] = React.useState(0);
-
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((oldProgress) => {
-        if (oldProgress === 100) {
-          return 0;
-        }
-        const diff = Math.random() * 10;
-        return Math.min(oldProgress + diff, 100);
-      });
-    }, 500);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
-
   const isFileDuplicate = (fileName) => {
     return uploadedFiles.some((file) => file.name === fileName);
   };
 
   const onDrop = useCallback((acceptedFiles) => {
-    console.log(acceptedFiles)
+    console.log(acceptedFiles);
     if (Array.isArray(acceptedFiles)) {
       // Update the state with the new files (filter out duplicates)
       setUploadedFiles((prevFiles) => [
         ...prevFiles,
         ...acceptedFiles.filter((file) => !isFileDuplicate(file.name)),
       ]);
-  
+
       // Initialize uploading state for each new file
       setUploadingFiles((prevUploadingFiles) => [
         ...prevUploadingFiles,
@@ -49,7 +29,7 @@ const UploadDocs = () => {
           .filter((file) => !isFileDuplicate(file.name))
           .map((file) => ({ name: file.name, isLoading: true })),
       ]);
-  
+
       // Simulate file upload delay (remove this in actual implementation)
       acceptedFiles
         .filter((file) => !isFileDuplicate(file.name))
@@ -60,7 +40,6 @@ const UploadDocs = () => {
         });
     }
   }, [uploadedFiles]);
-  
 
   const removeFile = (fileName) => {
     // Remove the specific file from the state
@@ -70,7 +49,7 @@ const UploadDocs = () => {
     // Open the Snackbar
     setOpen(true);
   };
-  
+
   const clearAllFiles = () => {
     // Clear all uploaded files and uploading states
     setUploadedFiles([]);
@@ -92,21 +71,19 @@ const UploadDocs = () => {
     }
     setOpen(false);
   };
-  
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   return (
     <div>
-
-<Snackbar
-  open={open}
-  autoHideDuration={6000}
-  onClose={handleClose}
-  message="Your File was Removed successfully."
-  variant="soft"
+      <Snackbar
+        open={open}
+        autoHideDuration={6000}
+        onClose={handleClose}
+        message="Your File was Removed successfully."
+        variant="soft"
         color="success"
-/>
+      />
 
       <div {...getRootProps()} style={dropzoneStyles}>
         <input {...getInputProps()} />
@@ -123,16 +100,11 @@ const UploadDocs = () => {
             {uploadedFiles.map((file, index) => (
               <ListItem key={file.name}>
                 <ListItemText primary={file.name} />
-                {uploadingFiles[index].isLoading ? (
-                  // <CircularProgress size={20} />
-                  <Box sx={{ width: '100%' }}>
-                  <LinearProgress variant="determinate" value={progress} />
-                </Box>
-                ) : (
+               
                   <IconButton onClick={() => removeFile(file.name)}>
                     <span>x</span>
                   </IconButton>
-                )}
+               
               </ListItem>
             ))}
           </List>
@@ -151,9 +123,6 @@ const UploadDocs = () => {
           >
             Upload Files
           </Button>
-          
-
-          
         </Grid>
       </Grid>
     </div>
