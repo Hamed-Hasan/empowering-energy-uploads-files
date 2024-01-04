@@ -2,7 +2,6 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button, Grid, IconButton, List, ListItem, ListItemText } from '@material-ui/core';
 import Snackbar from '@mui/material/Snackbar';
-import Box from '@mui/material/Box';
 
 const UploadDocs = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -14,7 +13,7 @@ const UploadDocs = () => {
   };
 
   const onDrop = useCallback((acceptedFiles) => {
-    console.log(acceptedFiles);
+    // console.log(acceptedFiles);
     if (Array.isArray(acceptedFiles)) {
       // Update the state with the new files (filter out duplicates)
       setUploadedFiles((prevFiles) => [
@@ -72,6 +71,28 @@ const UploadDocs = () => {
     setOpen(false);
   };
 
+  const handleUploadButtonClick = () => {
+    const formData = new FormData();
+    
+    // Add each file to the form data
+    uploadedFiles.forEach((file) => {
+      formData.append('files', file);
+    });
+  
+    // Make the POST request
+    fetch('http://localhost:5000/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    .then((response) => response.text())  
+    .then((data) => {
+      console.log('Files uploaded successfully:', data);
+    })
+    .catch((error) => {
+      console.error('Error uploading files:', error);
+    });
+  };
+  
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   return (
@@ -100,11 +121,9 @@ const UploadDocs = () => {
             {uploadedFiles.map((file, index) => (
               <ListItem key={file.name}>
                 <ListItemText primary={file.name} />
-               
-                  <IconButton onClick={() => removeFile(file.name)}>
-                    <span>x</span>
-                  </IconButton>
-               
+                <IconButton onClick={() => removeFile(file.name)}>
+                  <span>x</span>
+                </IconButton>
               </ListItem>
             ))}
           </List>
@@ -118,8 +137,7 @@ const UploadDocs = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={onDrop}
-            disabled={uploadingFiles.some((file) => file.isLoading)}
+            onClick={handleUploadButtonClick}
           >
             Upload Files
           </Button>
