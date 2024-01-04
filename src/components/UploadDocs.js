@@ -2,11 +2,34 @@ import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button, Grid, IconButton, List, ListItem, ListItemText } from '@material-ui/core';
 import Snackbar from '@mui/material/Snackbar';
+import Box from '@mui/material/Box';
+import LinearProgress from '@mui/material/LinearProgress';
 
 const UploadDocs = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [uploadingFiles, setUploadingFiles] = useState([]);
   const [open, setOpen] = useState(false);
+  const [progressBarColor, setProgressBarColor] = useState('primary');
+
+
+  const [showProgressBar, setShowProgressBar] = useState(false);
+  const [progress, setProgress] = React.useState(0);
+  
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress((oldProgress) => {
+        if (oldProgress === 100) {
+          return 0;
+        }
+        const diff = Math.random() * 10;
+        return Math.min(oldProgress + diff, 100);
+      });
+    }, 500);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
 
   const isFileDuplicate = (fileName) => {
     return uploadedFiles.some((file) => file.name === fileName);
@@ -73,38 +96,70 @@ const UploadDocs = () => {
 
   const handleUploadButtonClick = () => {
     const formData = new FormData();
-    
+  
     // Add each file to the form data
     uploadedFiles.forEach((file) => {
+      // Check file size
+      if (file.size > 26214400) {
+        alert('File size exceeds 25 MB. Please choose a smaller file.');
+        return;
+      }
+  
       formData.append('files', file);
     });
   
-    // Make the POST request
+    // Check for duplicate files
+    const fileNames = uploadedFiles.map((file) => file.name);
+    const hasDuplicates = new Set(fileNames).size !== fileNames.length;
+    if (hasDuplicates) {
+      alert('Duplicate file not allowed.');
+      return;
+    }
+  
+    // Show progress bar
+    setShowProgressBar(true);
+  
     fetch('http://localhost:5000/upload', {
       method: 'POST',
       body: formData,
     })
-    .then((response) => response.text())  
-    .then((data) => {
-      console.log('Files uploaded successfully:', data);
-    })
-    .catch((error) => {
-      console.error('Error uploading files:', error);
-    });
+      .then((response) => {
+        if (response.ok) {
+          // Update progress to 100 on success
+          setProgress(100);
+          return response.json();
+        } else {
+          // Update progress to 0 on failure
+          setProgress(0);
+          throw new Error('Failed to upload files');
+        }
+      })
+      .then((data) => {
+        console.log('Files uploaded successfully:', data);
+        // Set the color to 'success' for the progress bar on success
+        setProgressBarColor('success');
+      })
+      .catch((error) => {
+        console.error('Error uploading files:', error);
+        // Set the color to 'error' for the progress bar on error
+        setProgressBarColor('error');
+      })
+      .finally(() => {
+        // Hide the progress bar after the upload is complete (success or failure)
+        setTimeout(() => {
+          setShowProgressBar(false);
+        }, 2000); // You can adjust the timeout duration as needed
+      });
   };
   
+
+  
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   return (
     <div>
-      <Snackbar
-        open={open}
-        autoHideDuration={6000}
-        onClose={handleClose}
-        message="Your File was Removed successfully."
-        variant="soft"
-        color="success"
-      />
+ 
 
       <div {...getRootProps()} style={dropzoneStyles}>
         <input {...getInputProps()} />
@@ -126,6 +181,16 @@ const UploadDocs = () => {
                 </IconButton>
               </ListItem>
             ))}
+        {showProgressBar && (
+          <Box sx={{ width: '100%' }}>
+            <LinearProgress
+              // variant="determinate"
+              value={progress}
+              color={progressBarColor} 
+              style={{ height: '4px' }}
+            />
+          </Box>
+        )}
           </List>
           <Button variant="outlined" color="secondary" onClick={clearAllFiles}>
             Clear All
