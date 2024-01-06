@@ -10,7 +10,8 @@ const UploadDocs = () => {
   const [uploadingFiles, setUploadingFiles] = useState([]);
   const [open, setOpen] = useState(false);
   const [progressBarColor, setProgressBarColor] = useState('primary');
-
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const [showProgressBar, setShowProgressBar] = useState(false);
   const [progress, setProgress] = React.useState(0);
@@ -101,7 +102,7 @@ const UploadDocs = () => {
     uploadedFiles.forEach((file) => {
       // Check file size
       if (file.size > 26214400) {
-        alert('File size exceeds 25 MB. Please choose a smaller file.');
+        setErrorMessage('File size exceeds 25 MB. Please choose a smaller file.');
         return;
       }
   
@@ -112,7 +113,7 @@ const UploadDocs = () => {
     const fileNames = uploadedFiles.map((file) => file.name);
     const hasDuplicates = new Set(fileNames).size !== fileNames.length;
     if (hasDuplicates) {
-      alert('Duplicate file not allowed.');
+      setErrorMessage('Duplicate file not allowed.');
       return;
     }
   
@@ -128,20 +129,26 @@ const UploadDocs = () => {
           // Update progress to 100 on success
           setProgress(100);
           return response.json();
+        } else if (response.status === 400) {
+          // Handle duplicate file error
+          return response.json();
         } else {
-          // Update progress to 0 on failure
+          // Update progress to 0 on other failures
           setProgress(0);
           throw new Error('Failed to upload files');
         }
       })
       .then((data) => {
-        console.log('Files uploaded successfully:', data);
-        // Set the color to 'success' for the progress bar on success
-        setProgressBarColor('success');
+        if (data.error) {
+          setErrorMessage(data.error);
+          setProgressBarColor('error');
+        } else {
+          setSuccessMessage(data.message);
+          setProgressBarColor('success');
+        }
       })
       .catch((error) => {
-        console.error('Error uploading files:', error);
-        // Set the color to 'error' for the progress bar on error
+        setErrorMessage('Error uploading files');
         setProgressBarColor('error');
       })
       .finally(() => {
@@ -152,7 +159,6 @@ const UploadDocs = () => {
       });
   };
   
-
   
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
@@ -191,6 +197,8 @@ const UploadDocs = () => {
             />
           </Box>
         )}
+         {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
+        {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
           </List>
           <Button variant="outlined" color="secondary" onClick={clearAllFiles}>
             Clear All
