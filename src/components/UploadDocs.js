@@ -98,14 +98,15 @@ const UploadDocs = () => {
   const handleUploadButtonClick = () => {
     const formData = new FormData();
   
+    // Check for file size before adding files to the form data
+    const oversizedFile = uploadedFiles.find((file) => file.size > 26214400);
+    if (oversizedFile) {
+      setErrorMessage('File size exceeds 25 MB. Please choose a smaller file.');
+      return;
+    }
+  
     // Add each file to the form data
     uploadedFiles.forEach((file) => {
-      // Check file size
-      if (file.size > 26214400) {
-        setErrorMessage('File size exceeds 25 MB. Please choose a smaller file.');
-        return;
-      }
-  
       formData.append('files', file);
     });
   
@@ -130,7 +131,7 @@ const UploadDocs = () => {
           setProgress(100);
           return response.json();
         } else if (response.status === 400) {
-          // Handle duplicate file error
+          // Handle duplicate file or other specific error
           return response.json();
         } else {
           // Update progress to 0 on other failures
